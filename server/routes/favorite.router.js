@@ -16,8 +16,29 @@ router.get('/', (req, res) => {
 })
 
 
-
-
+router.post('/', (req, res) => {
+    const { giphy, category_id } = req.body;
+    const sqlText = `INSERT INTO "favorites" ("giphy", "category_id") VALUES ($1, $2)`;
+    pool.query(sqlText, [giphy, category_id])
+      .then(() => res.sendStatus(201))
+      .catch(err => {
+        console.error('Error adding favorite image to database', err);
+        res.sendStatus(500);
+      });
+  });
+  
+  // PUT to update category of a favorite image
+  router.put('/:id', (req, res) => {
+    const { category_id } = req.body;
+    const favoriteId = req.params.id;
+    const sqlText = `UPDATE "favorites" SET "category_id" = $1 WHERE "id" = $2`;
+    pool.query(sqlText, [category_id, favoriteId])
+      .then(() => res.sendStatus(200))
+      .catch(err => {
+        console.error('Error updating favorite image category', err);
+        res.sendStatus(500);
+      });
+  });
 
 // add a new favorite
 
@@ -38,18 +59,21 @@ router.get('/', (req, res) => {
 //   }
 // });
 
-// favorite.router.js
+
 router.get('/search', (req, res) => {
     const searchQuery = req.query.q || 'funny+cat';
-    axios.get(`https://api.giphy.com/v1/gifs/search?api_key=${process.env.GIPHY_API_KEY}&q=${searchQuery}`)
-        .then((response) => {
-            res.status(200).json(response.data);
-        })
-        .catch((error) => {
-            console.error('Error fetching GIFs from Giphy:', error);
-            res.status(500).json({ error: 'Failed to fetch GIFs from Giphy' }); // Return detailed error response
-        });
-});
+    axios.get(`https://api.giphy.com/v1/gifs/search`, {
+      params: {
+        api_key: process.env.GIPHY_API_KEY,
+        q: searchQuery
+      }
+    })
+    .then(response => res.status(200).json(response.data))
+    .catch(error => {
+      console.error('Error fetching GIFs from Giphy:', error.message);
+      res.status(500).json({ error: 'Failed to fetch GIFs from Giphy' });
+    });
+  });
 
 module.exports = router;
 
